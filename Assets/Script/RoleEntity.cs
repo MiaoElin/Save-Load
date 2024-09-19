@@ -6,8 +6,8 @@ public class RoleEntity : MonoBehaviour {
     Vector2 moveAxis;
     [SerializeField] Rigidbody2D rb;
     bool isOnGround;
-    public void SetPos() {
-
+    public void SetPos(Vector2 pos) {
+        transform.position = (Vector3)pos;
     }
 
     void Update() {
