@@ -6,15 +6,19 @@ public class RoleEntity : MonoBehaviour {
     Vector2 moveAxis;
     [SerializeField] Rigidbody2D rb;
     bool isOnGround;
+    public int id;
+    public bool isPlayer;
     public void SetPos(Vector2 pos) {
-        transform.position = (Vector3)pos;
+        transform.position = pos;
     }
 
     void Update() {
-        Move();
-        Falling();
-        Jump();
-        Check_Ground();
+        if (isPlayer) {
+            Move();
+            Falling();
+            Jump();
+            Check_Ground();
+        }
     }
 
     void Move() {

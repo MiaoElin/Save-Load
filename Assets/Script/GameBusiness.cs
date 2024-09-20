@@ -2,6 +2,7 @@ using UnityEngine;
 using System.IO;
 using System.Text;
 using GameFunctions;
+using System.Collections.Generic;
 
 public static class GameBusiness {
     public static void NewGame(GameContext ctx) {
@@ -10,7 +11,7 @@ public static class GameBusiness {
 
     public static void SaveGame(GameContext ctx) {
         // role pos
-        Vector2 pos = ctx.role.transform.position;
+        Vector2 pos = ctx.player.transform.position;
 
         // 存储坐标
         // 方法1：用字符串存储
@@ -38,7 +39,7 @@ public static class GameBusiness {
 
     public static void LoadType1(GameContext ctx) {
         string[] lines = File.ReadAllLines("Slot1.save");
-        var role = ctx.role;
+        var role = ctx.player;
         role.SetPos(new Vector2(float.Parse(lines[0]), float.Parse(lines[1])));
     }
 
@@ -65,9 +66,25 @@ public static class GameBusiness {
         Vector2 pos = new Vector2();
         pos.x = GFBufferEncoderReader.ReadSingle(buffer, ref index);
         pos.y = GFBufferEncoderReader.ReadSingle(buffer, ref index);
-        ctx.role.SetPos(pos);
+        ctx.player.SetPos(pos);
     }
 
+    #endregion
+    #region Create_Room
+    static int roomRecord = 0;
+    public static RoomEntity Create_Room(GameContext ctx) {
+        RoomEntity room = new GameObject("room").AddComponent<RoomEntity>();
+        room.id = roomRecord++;
+        room.SetPos(UnityEngine.Random.insideUnitCircle * 5);
+        room.roles = new List<RoleEntity>();
+        for (int i = 0; i < Random.Range(1, 5); i++) {
+            RoleEntity role = GameObject.Instantiate(ctx.rolePrefab);
+            role.SetPos(room.GetPos() + UnityEngine.Random.insideUnitCircle * 2);
+            role.id = i;
+            room.roles.Add(role);
+        }
+        return room;
+    }
     #endregion
 
 
