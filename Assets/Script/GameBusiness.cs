@@ -84,7 +84,15 @@ public static class GameBusiness {
     public static void SaveType3(GameContext ctx) {
         byte[] buffer = new byte[1024];
         int index = 4;
+        GameSaveMessage gameSave = new GameSaveMessage();
+        var player = ctx.player;
+        RoleSaveMessage playerSave = new RoleSaveMessage();
+        playerSave.id = player.id;
+        playerSave.pos = player.GetPos();
+        gameSave.playerSave = playerSave;
+
         var rooms = ctx.rooms.Values;
+        gameSave.roomSaves = new List<RoomSaveMessage>(rooms.Count);
         foreach (var room in rooms) {
             RoomSaveMessage roomMessage = new RoomSaveMessage();
             roomMessage.id = room.id;
@@ -97,8 +105,10 @@ public static class GameBusiness {
                 roleMessage.pos = role.GetPos();
                 roomMessage.roleSaves.Add(roleMessage);
             }
-            roomMessage.WriteTo(buffer, ref index);
+            gameSave.roomSaves.Add(roomMessage);
         }
+
+        gameSave.WriteTo(buffer, ref index);
 
         int length = index;
         index = 0;
@@ -112,20 +122,40 @@ public static class GameBusiness {
         byte[] buffer = File.ReadAllBytes("Slot1.save");
         int index = 0;
         int length = (int)GFBufferEncoderReader.ReadUInt32(buffer, ref index);
-        while (index < length) {
-            RoomSaveMessage roomMessage = new RoomSaveMessage();
-            roomMessage.FromBytes(buffer, ref index);
+
+        GameSaveMessage gameSave = new GameSaveMessage();
+        gameSave.FromBytes(buffer, ref index);
+        RoleSaveMessage playerSave = gameSave.playerSave;
+        ctx.player.id = playerSave.id;
+        ctx.player.SetPos(playerSave.pos);
+
+        foreach (var roomSave in gameSave.roomSaves) {
             RoomEntity room = new GameObject("Room").AddComponent<RoomEntity>();
-            room.id = roomMessage.id;
-            room.SetPos(roomMessage.pos);
-            var roleSaves = roomMessage.roleSaves;
+            room.id = roomSave.id;
+            room.SetPos(roomSave.pos);
+            var roleSaves = roomSave.roleSaves;
             foreach (var roleSave in roleSaves) {
                 RoleEntity role = GameObject.Instantiate(ctx.rolePrefab);
                 role.id = roleSave.id;
                 role.SetPos(roleSave.pos);
                 room.roles.Add(role);
             }
+            ctx.rooms.Add(room.id, room);
         }
+        // while (index < length) {
+        //     RoomSaveMessage roomMessage = new RoomSaveMessage();
+        //     roomMessage.FromBytes(buffer, ref index);
+        //     RoomEntity room = new GameObject("Room").AddComponent<RoomEntity>();
+        //     room.id = roomMessage.id;
+        //     room.SetPos(roomMessage.pos);
+        //     var roleSaves = roomMessage.roleSaves;
+        //     foreach (var roleSave in roleSaves) {
+        //         RoleEntity role = GameObject.Instantiate(ctx.rolePrefab);
+        //         role.id = roleSave.id;
+        //         role.SetPos(roleSave.pos);
+        //         room.roles.Add(role);
+        //     }
+        // }
     }
 
     #endregion
