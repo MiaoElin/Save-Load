@@ -32,12 +32,6 @@ public class ClientMain : MonoBehaviour {
             GameBusiness.SaveGame(ctx);
             btn_Save.gameObject.SetActive(false);
         });
-
-        // 生成房间以及里面的角色
-        RoomEntity room1 = GameBusiness.Create_Room(ctx);
-        RoomEntity room2 = GameBusiness.Create_Room(ctx);
-        ctx.rooms.Add(room1.id, room1);
-        ctx.rooms.Add(room2.id, room2);
     }
 
     void Update() {

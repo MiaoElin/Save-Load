@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -61,5 +62,9 @@ public class RoleEntity : MonoBehaviour {
         var velocity = rb.velocity;
         velocity.y += -9.8f * Time.deltaTime;
         rb.velocity = velocity;
+    }
+
+    internal Vector2 GetPos() {
+        return transform.position;
     }
 }

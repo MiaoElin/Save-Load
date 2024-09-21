@@ -7,6 +7,11 @@ using System.Collections.Generic;
 public static class GameBusiness {
     public static void NewGame(GameContext ctx) {
 
+        // 生成房间以及里面的角色
+        RoomEntity room1 = GameBusiness.Create_Room(ctx);
+        RoomEntity room2 = GameBusiness.Create_Room(ctx);
+        ctx.rooms.Add(room1.id, room1);
+        ctx.rooms.Add(room2.id, room2);
     }
 
     public static void SaveGame(GameContext ctx) {
@@ -17,14 +22,19 @@ public static class GameBusiness {
         // 方法1：用字符串存储
         // SaveType1(ctx, pos);
         // 方法2：用二进制存储
-        SaveType2(ctx, pos);
+        // SaveType2(ctx, pos);
+        // 方法3：
+        SaveType3(ctx);
+
     }
 
     public static void LoadGame(GameContext ctx) {
         // 方法1
         // LoadType1(ctx);
         // 方法2
-        LoadType2(ctx);
+        // LoadType2(ctx);
+        // 方法3
+        LoadType3(ctx);
     }
 
     #region Type1
@@ -68,8 +78,60 @@ public static class GameBusiness {
         pos.y = GFBufferEncoderReader.ReadSingle(buffer, ref index);
         ctx.player.SetPos(pos);
     }
+    #endregion
+
+    #region Type3
+    public static void SaveType3(GameContext ctx) {
+        byte[] buffer = new byte[1024];
+        int index = 4;
+        var rooms = ctx.rooms.Values;
+        foreach (var room in rooms) {
+            RoomSaveMessage roomMessage = new RoomSaveMessage();
+            roomMessage.id = room.id;
+            roomMessage.pos = room.GetPos();
+            var roles = room.roles;
+            roomMessage.roleSaves = new List<RoleSaveMessage>(room.roles.Count);
+            foreach (var role in roles) {
+                RoleSaveMessage roleMessage = new RoleSaveMessage();
+                roleMessage.id = role.id;
+                roleMessage.pos = role.GetPos();
+                roomMessage.roleSaves.Add(roleMessage);
+            }
+            roomMessage.WriteTo(buffer, ref index);
+        }
+
+        int length = index;
+        index = 0;
+        GFBufferEncoderWriter.WriteUInt32(buffer, (uint)length, ref index);
+        using (FileStream fs = new FileStream("Slot1.save", FileMode.Create)) {
+            fs.Write(buffer, 0, length);
+        }
+    }
+
+    public static void LoadType3(GameContext ctx) {
+        byte[] buffer = File.ReadAllBytes("Slot1.save");
+        int index = 0;
+        int length = (int)GFBufferEncoderReader.ReadUInt32(buffer, ref index);
+        while (index < length) {
+            RoomSaveMessage roomMessage = new RoomSaveMessage();
+            roomMessage.FromBytes(buffer, ref index);
+            RoomEntity room = new GameObject("Room").AddComponent<RoomEntity>();
+            room.id = roomMessage.id;
+            room.SetPos(roomMessage.pos);
+            var roleSaves = roomMessage.roleSaves;
+            foreach (var roleSave in roleSaves) {
+                RoleEntity role = GameObject.Instantiate(ctx.rolePrefab);
+                role.id = roleSave.id;
+                role.SetPos(roleSave.pos);
+                room.roles.Add(role);
+            }
+        }
+    }
 
     #endregion
+
+
+
     #region Create_Room
     static int roomRecord = 0;
     public static RoomEntity Create_Room(GameContext ctx) {
